@@ -26,7 +26,7 @@ resource "yandex_compute_instance" "nextcloud-vm" {
 
   resources {
     cores  = 2
-    memory = 2
+    memory = 4
   }
 
   boot_disk {
@@ -41,6 +41,19 @@ resource "yandex_compute_instance" "nextcloud-vm" {
   metadata = {
     ssh-keys = "ubuntu:${file("~/.ssh/id_rsa.pub")}"
   }
+}
+
+resource "yandex_dns_zone" "zone" {
+  zone   = "vvot33.itiscl.ru."
+  public = true
+}
+
+resource "yandex_dns_recordset" "project-record" {
+  zone_id = yandex_dns_zone.zone.id
+  name    = "project"
+  type    = "A"
+  ttl     = 600
+  data    = [yandex_compute_instance.nextcloud-vm.network_interface.0.nat_ip_address]
 }
 
 output "vm_external_ip" {

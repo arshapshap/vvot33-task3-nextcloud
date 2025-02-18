@@ -1,0 +1,27 @@
+<VirtualHost *:80>
+    ServerName {{ domain }}
+    Redirect permanent / https://{{ domain }}/
+</VirtualHost>
+
+<VirtualHost *:443>
+    ServerName {{ domain }}
+    DocumentRoot /var/www/html/nextcloud
+
+    SSLEngine on
+    SSLCertificateFile /etc/letsencrypt/live/{{ domain }}/fullchain.pem
+    SSLCertificateKeyFile /etc/letsencrypt/live/{{ domain }}/privkey.pem
+
+    <Directory /var/www/html/nextcloud>
+        Require all granted
+        AllowOverride All
+        Options FollowSymLinks MultiViews
+        Satisfy Any
+
+        <IfModule mod_dav.c>
+            Dav off
+        </IfModule>
+    </Directory>
+
+    ErrorLog ${APACHE_LOG_DIR}/nextcloud-error.log
+    CustomLog ${APACHE_LOG_DIR}/nextcloud-access.log combined
+</VirtualHost>

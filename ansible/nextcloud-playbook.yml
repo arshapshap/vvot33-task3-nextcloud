@@ -1,5 +1,14 @@
 - name: Nextcloud
   hosts: nextcloud-server
+  vars:
+    domain: "project.vvot33.itiscl.ru"
+    email: "arshapshap@mail.ru"
+    admin_user: "admin"
+    admin_password: "vvot33-password"
+    db_user: "dbuser"
+    db_password: "dbpassword"
+    db_name: "dbnextcloud"
+  
   tasks:
     - name: Timezone settings
       become: true
@@ -15,9 +24,10 @@
     - name: Install packages
       become: true
       ansible.builtin.apt:
-        pkg: 
+        pkg:
           - acl
           - apache2
+          - certbot
           - libapache2-mod-php
           - php-curl
           - php-gd
@@ -27,10 +37,11 @@
           - php-pgsql
           - php-zip
           - postgresql-all
+          - python3-certbot-apache
           - python3-psycopg2
           - unzip
         state: present
-    
+
     - name: Download and unpack Nextcloud
       become: true
       ansible.builtin.unarchive:
@@ -41,18 +52,75 @@
         group: "www-data"
         creates: "/var/www/html/nextcloud"
 
-    - name: Create Postgresql user
+    - name: Create Apache config
+      become: true
+      ansible.builtin.template:
+        src: "nextcloud.conf.j2"
+        dest: "/etc/apache2/sites-available/nextcloud.conf"
+      notify: Restart Apache
+
+    - name: Enable Apache modules
+      become: true
+      ansible.builtin.command:
+        cmd: "a2enmod {{ item }}"
+      loop:
+        - rewrite
+        - headers
+        - env
+        - dir
+        - mime
+
+    - name: Enable site
+      become: true
+      ansible.builtin.command:
+        cmd: "a2ensite nextcloud.conf"
+        cmd: "a2enmod php8.3"
+      notify: Restart Apache
+
+    - name: Create PostgreSQL user
       become: true
       become_user: postgres
-      become_method: ansible.builtin.sudo
       community.postgresql.postgresql_user:
-        name: dbuser
-        password: dbpassword
-    
-    - name: Create Postgresql database
+        name: "{{ db_user }}"
+        password: "{{ db_password }}"
+
+    - name: Create PostgreSQL database
       become: true
       become_user: postgres
-      become_method: ansible.builtin.sudo
       community.postgresql.postgresql_db:
-        name: dbnextcloud
-        owner: "dbuser"
+        name: "{{ db_name }}"
+        owner: "{{ db_user }}"
+
+    - name: Obtain SSL certificate
+      become: true
+      command: certbot --apache -d {{ domain }} --non-interactive --agree-tos --email {{ email }}
+      args:
+        creates: /etc/letsencrypt/live/{{ domain }}/fullchain.pem
+
+    - name: Set directory permissions
+      become: true
+      ansible.builtin.command:
+        cmd: "chown -R www-data:www-data /var/www/html/nextcloud/"
+
+    - name: Configure Nextcloud
+      become: true
+      shell: |
+        sudo -u www-data php /var/www/html/nextcloud/occ maintenance:install \
+          --database "pgsql" \
+          --database-name "{{ db_name }}" \
+          --database-user "{{ db_user }}" \
+          --database-pass "{{ db_password }}" \
+          --admin-user "{{ admin_user }}" \
+          --admin-pass "{{ admin_password }}" \
+          --data-dir "/var/www/html/nextcloud/data"
+
+    - name: Set trusted domains
+      become: true
+      command: sudo -u www-data php /var/www/html/nextcloud/occ config:system:set trusted_domains 1 --value={{ domain }}
+
+  handlers:
+    - name: Restart Apache
+      become: true
+      ansible.builtin.service:
+        name: apache2
+        state: restarted

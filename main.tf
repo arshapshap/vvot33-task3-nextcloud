@@ -46,3 +46,21 @@ resource "yandex_compute_instance" "nextcloud-vm" {
 output "vm_external_ip" {
   value = yandex_compute_instance.nextcloud-vm.network_interface.0.nat_ip_address
 }
+
+resource "null_resource" "set-ansible-host" {
+    provisioner "local-exec" {
+        command = "sed -i '' -e 's/{IP}/${yandex_compute_instance.nextcloud-vm.network_interface[0].nat_ip_address}/g' ansible/inventory.ini"
+    }
+    provisioner "local-exec" {
+        when    = destroy
+        command = "sed -i '' -e 's/[0-9]\\{1,3\\}\\(.[0-9]\\{1,3\\}\\)\\{3\\}/{IP}/g' ansible/inventory.ini"
+    }
+    depends_on = [yandex_compute_instance.nextcloud-vm]
+}
+
+resource "null_resource" "add-known-host" {
+    provisioner "local-exec" {
+        command = "ssh-keyscan -T 240 -H ${yandex_compute_instance.nextcloud-vm.network_interface[0].nat_ip_address} >> ~/.ssh/known_hosts"
+    }
+    depends_on = [yandex_compute_instance.nextcloud-vm]
+}

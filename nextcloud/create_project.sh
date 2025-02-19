@@ -8,6 +8,7 @@ user_password=$3
 
 echo "Creating project '$project_name' with user '$user_email' and password '$user_password'"
 
+cd /home/$USER/nextcloud
 if [ ! -f project-$project_name.tf ]; then
   cp templates/project.tf.template project-$project_name.tf
   sed -i "s/{PROJECT_NAME}/$project_name/g" project-$project_name.tf
@@ -20,11 +21,13 @@ if [ ! -f ansible/inventory-$project_name.ini ]; then
   sed -i "s/{PROJECT_NAME}/$project_name/g" ansible/inventory-$project_name.ini
 fi
 
+/home/$USER/terraform init -upgrade
+
 terraform_success=false
 terraform_attempt_num=1
 terraform_max_attempts=3
 while [ $terraform_success = false ] && [ $terraform_attempt_num -le $terraform_max_attempts ]; do
-  terraform apply -auto-approve
+  /home/$USER/terraform apply -auto-approve
 
   if [ $? -eq 0 ]; then
     terraform_success=true

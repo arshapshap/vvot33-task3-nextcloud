@@ -32,7 +32,7 @@ resource "yandex_dns_recordset" "record-{PROJECT_NAME}" {
   zone_id = yandex_dns_zone.zone.id
   name    = "{PROJECT_NAME}"
   type    = "A"
-  ttl     = 600
+  ttl     = 3000
   data    = [yandex_compute_instance.nextcloud-vm-{PROJECT_NAME}.network_interface.0.nat_ip_address]
 }
 
@@ -54,4 +54,8 @@ resource "null_resource" "add-known-host-{PROJECT_NAME}" {
         command = "ssh-keyscan -T 240 -H ${yandex_compute_instance.nextcloud-vm-{PROJECT_NAME}.network_interface[0].nat_ip_address} >> ~/.ssh/known_hosts"
     }
     depends_on = [yandex_compute_instance.nextcloud-vm-{PROJECT_NAME}]
+}
+
+output "{PROJECT_NAME}" {
+    value = "{PROJECT_NAME}.${var.domain}"
 }

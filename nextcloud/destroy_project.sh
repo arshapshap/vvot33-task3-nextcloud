@@ -4,7 +4,10 @@ fi
 
 project_name=$1
 
-terraform destroy \
+echo "Destroying project '$project_name'"
+
+cd /home/$USER/nextcloud
+/home/$USER/terraform destroy \
     -target yandex_compute_disk.boot-disk-$project_name \
     -target yandex_compute_instance.nextcloud-vm-$project_name \
     -target yandex_dns_recordset.record-$project_name \
@@ -13,10 +16,10 @@ terraform destroy \
     -target null_resource.add-known-host-$project_name \
     -auto-approve
 
-if [ $? -eq 0 ]; then
-    rm ansible/inventory-$project_name.ini
-    rm project-$project_name.tf
-else
+if [ $? -ne 0 ]; then
     echo "Terraform destroy failed"
     exit 1
 fi
+
+rm ansible/inventory-$project_name.ini
+rm project-$project_name.tf

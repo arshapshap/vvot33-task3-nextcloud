@@ -1,0 +1,84 @@
+- name: Server
+  hosts: server
+  vars:
+    terraform_version: "1.10.5"
+    terraform_url: "https://hashicorp-releases.yandexcloud.net/terraform/{{ terraform_version }}/terraform_{{ terraform_version }}_linux_amd64.zip"
+    user_home: "/home/ubuntu"
+  
+  tasks:
+    - name: Timezone settings
+      become: true
+      community.general.timezone:
+        name: Europe/Moscow
+
+    - name: Upgrade Software
+      become: true
+      ansible.builtin.apt:
+        update_cache: true
+        upgrade: yes
+
+    - name: Install Ansible
+      become: true
+      apt:
+        name: ansible
+        state: present
+        update_cache: yes
+
+    - name: Install unzip
+      become: true
+      apt:
+        name: unzip
+        state: present
+        update_cache: yes
+
+    - name: Download Terraform
+      become: true
+      get_url:
+        url: "{{ terraform_url }}"
+        dest: "{{ user_home }}/terraform.zip"
+        mode: '0755'
+
+    - name: Unzip Terraform
+      become: true
+      unarchive:
+        src: "{{ user_home }}/terraform.zip"
+        dest: "{{ user_home }}"
+        remote_src: yes
+        mode: '0755'
+
+    - name: Configure Terraform mirror
+      become: true
+      copy:
+        dest: "{{ user_home }}/.terraformrc"
+        content: |
+          provider_installation {
+            network_mirror {
+              url = "https://terraform-mirror.yandexcloud.net/"
+              include = ["registry.terraform.io/*/*"]
+            }
+            direct {
+              exclude = ["registry.terraform.io/*/*"]
+            }
+          }
+        mode: '0644'
+
+    - name: Generate SSH key
+      become: true
+      become_user: ubuntu
+      openssh_keypair:
+        path: "{{ user_home }}/.ssh/id_rsa"
+        type: rsa
+        size: 4096
+        force: yes
+        comment: "ansible-generated"
+      register: sshkey
+
+    - name: Set .ssh permissions
+      become: true
+      become_user: ubuntu
+      file:
+        path: "{{ user_home }}/.ssh"
+        state: directory
+        mode: '0700'
+        owner: ubuntu
+        group: ubuntu

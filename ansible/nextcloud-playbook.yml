@@ -1,9 +1,9 @@
 - name: Nextcloud
   hosts: nextcloud-server
   vars:
-    email: "{{ hostvars[inventory_hostname].user_email }}"
+    email: ""
+    password: ""
     domain: "{{ hostvars[inventory_hostname].user_project_domain }}"
-    password: "{{ hostvars[inventory_hostname].user_password }}"
     db_user: "dbuser"
     db_password: "dbpassword"
     db_name: "dbnextcloud"

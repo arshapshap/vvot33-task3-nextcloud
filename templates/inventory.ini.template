@@ -1,0 +1,2 @@
+[nextcloud]
+nextcloud-server ansible_host={IP} ansible_user=ubuntu ansible_connection=ssh user_project_domain={PROJECT_NAME}.{DOMAIN}

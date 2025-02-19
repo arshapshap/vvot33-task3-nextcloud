@@ -38,13 +38,13 @@ resource "yandex_dns_recordset" "record-{PROJECT_NAME}" {
 
 resource "null_resource" "add-domain-to-inventory-{PROJECT_NAME}" {
     provisioner "local-exec" {
-        command = "sed -i '' \"s/{DOMAIN}/${var.domain}/g\" ansible/inventory-{PROJECT_NAME}.ini"
+        command = "sed -i \"s/{DOMAIN}/${var.domain}/g\" ansible/inventory-{PROJECT_NAME}.ini"
     }
 }
 
 resource "null_resource" "add-ip-to-inventory-{PROJECT_NAME}" {
     provisioner "local-exec" {
-        command = "sed -i '' \"s/{IP}/${yandex_compute_instance.nextcloud-vm-{PROJECT_NAME}.network_interface[0].nat_ip_address}/g\" ansible/inventory-{PROJECT_NAME}.ini"
+        command = "sed -i \"s/{IP}/${yandex_compute_instance.nextcloud-vm-{PROJECT_NAME}.network_interface[0].nat_ip_address}/g\" ansible/inventory-{PROJECT_NAME}.ini"
     }
     depends_on = [yandex_compute_instance.nextcloud-vm-{PROJECT_NAME}, null_resource.add-domain-to-inventory-{PROJECT_NAME}]
 }

@@ -26,6 +26,7 @@
         pkg:
           - acl
           - apache2
+          - bzip2
           - certbot
           - libapache2-mod-php
           - php-curl
@@ -44,12 +45,13 @@
     - name: Download and unpack Nextcloud
       become: true
       ansible.builtin.unarchive:
-        src: "https://download.nextcloud.com/server/releases/latest.zip"
+        src: "https://download.nextcloud.com/server/releases/latest.tar.bz2"
         dest: "/var/www/html"
         remote_src: yes
         owner: "www-data"
         group: "www-data"
-        creates: "/var/www/html/nextcloud"
+        extra_opts: ["--strip-components=1"]
+        creates: "/var/www/html/index.php"
 
     - name: Create Apache config
       become: true
@@ -99,23 +101,23 @@
     - name: Set directory permissions
       become: true
       ansible.builtin.command:
-        cmd: "chown -R www-data:www-data /var/www/html/nextcloud/"
+        cmd: "chown -R www-data:www-data /var/www/html/"
 
     - name: Configure Nextcloud
       become: true
       shell: |
-        sudo -u www-data php /var/www/html/nextcloud/occ maintenance:install \
+        sudo -u www-data php /var/www/html/occ maintenance:install \
           --database "pgsql" \
           --database-name "{{ db_name }}" \
           --database-user "{{ db_user }}" \
           --database-pass "{{ db_password }}" \
           --admin-user "{{ email }}" \
           --admin-pass "{{ password }}" \
-          --data-dir "/var/www/html/nextcloud/data"
+          --data-dir "/var/www/html/data"
 
     - name: Set trusted domains
       become: true
-      command: sudo -u www-data php /var/www/html/nextcloud/occ config:system:set trusted_domains 1 --value={{ domain }}
+      command: sudo -u www-data php /var/www/html/occ config:system:set trusted_domains 1 --value={{ domain }}
 
   handlers:
     - name: Restart Apache

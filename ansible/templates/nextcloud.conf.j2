@@ -5,13 +5,13 @@
 
 <VirtualHost *:443>
     ServerName {{ domain }}
-    DocumentRoot /var/www/html/nextcloud
+    DocumentRoot /var/www/html
 
     SSLEngine on
     SSLCertificateFile /etc/letsencrypt/live/{{ domain }}/fullchain.pem
     SSLCertificateKeyFile /etc/letsencrypt/live/{{ domain }}/privkey.pem
 
-    <Directory /var/www/html/nextcloud>
+    <Directory /var/www/html>
         Require all granted
         AllowOverride All
         Options FollowSymLinks MultiViews

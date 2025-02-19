@@ -1,10 +1,9 @@
 - name: Nextcloud
   hosts: nextcloud-server
   vars:
-    domain: "project.vvot33.itiscl.ru"
-    email: "arshapshap@mail.ru"
-    admin_user: "admin"
-    admin_password: "vvot33-password"
+    email: "{{ hostvars[inventory_hostname].user_email }}"
+    domain: "{{ hostvars[inventory_hostname].user_project_domain }}"
+    password: "{{ hostvars[inventory_hostname].user_password }}"
     db_user: "dbuser"
     db_password: "dbpassword"
     db_name: "dbnextcloud"
@@ -110,8 +109,8 @@
           --database-name "{{ db_name }}" \
           --database-user "{{ db_user }}" \
           --database-pass "{{ db_password }}" \
-          --admin-user "{{ admin_user }}" \
-          --admin-pass "{{ admin_password }}" \
+          --admin-user "{{ email }}" \
+          --admin-pass "{{ password }}" \
           --data-dir "/var/www/html/nextcloud/data"
 
     - name: Set trusted domains

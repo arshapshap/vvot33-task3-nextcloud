@@ -44,20 +44,16 @@ resource "yandex_compute_instance" "nextcloud-vm" {
 }
 
 resource "yandex_dns_zone" "zone" {
-  zone   = "vvot33.itiscl.ru."
+  zone   = "${var.domain}."
   public = true
 }
 
 resource "yandex_dns_recordset" "project-record" {
   zone_id = yandex_dns_zone.zone.id
-  name    = "project"
+  name    = var.project_name
   type    = "A"
   ttl     = 600
   data    = [yandex_compute_instance.nextcloud-vm.network_interface.0.nat_ip_address]
-}
-
-output "vm_external_ip" {
-  value = yandex_compute_instance.nextcloud-vm.network_interface.0.nat_ip_address
 }
 
 resource "null_resource" "set-ansible-host" {
@@ -69,6 +65,17 @@ resource "null_resource" "set-ansible-host" {
         command = "sed -i '' -e 's/[0-9]\\{1,3\\}\\(.[0-9]\\{1,3\\}\\)\\{3\\}/{IP}/g' ansible/inventory.ini"
     }
     depends_on = [yandex_compute_instance.nextcloud-vm]
+}
+
+resource "null_resource" "set-playbook-vars" {
+    provisioner "local-exec" {
+        command = "sed -i '' -e 's/{VARS}/user_project_domain=${var.project_name}.${var.domain} user_email=${var.email} user_password=${var.password}/g' ansible/inventory.ini"
+    }
+    provisioner "local-exec" {
+        when    = destroy
+        command = "sed -i '' -e 's/user_project_domain=.*$/{VARS}/g' ansible/inventory.ini"
+    }
+    depends_on = [null_resource.set-ansible-host]
 }
 
 resource "null_resource" "add-known-host" {

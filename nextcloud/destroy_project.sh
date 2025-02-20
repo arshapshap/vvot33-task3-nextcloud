@@ -1,5 +1,5 @@
 if [ "$#" -ne 1 ]; then
-    echo "Illegal number of parameters. Using: ./destroy_project <PROJECT_NAME>"
+    echo "Illegal number of parameters. Using: ./destroy_project.sh <PROJECT_NAME>"
 fi
 
 project_name=$1

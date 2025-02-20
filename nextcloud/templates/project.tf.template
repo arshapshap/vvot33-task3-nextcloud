@@ -29,7 +29,7 @@ resource "yandex_compute_instance" "nextcloud-vm-{PROJECT_NAME}" {
 }
 
 resource "yandex_dns_recordset" "record-{PROJECT_NAME}" {
-  zone_id = yandex_dns_zone.zone.id
+  zone_id = var.dns_zone_id
   name    = "{PROJECT_NAME}"
   type    = "A"
   ttl     = 3000
@@ -56,6 +56,6 @@ resource "null_resource" "add-known-host-{PROJECT_NAME}" {
     depends_on = [yandex_compute_instance.nextcloud-vm-{PROJECT_NAME}]
 }
 
-output "{PROJECT_NAME}" {
+output "{PROJECT_NAME}-domain" {
     value = "{PROJECT_NAME}.${var.domain}"
 }

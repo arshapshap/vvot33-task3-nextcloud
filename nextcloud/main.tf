@@ -27,8 +27,3 @@ resource "yandex_vpc_subnet" "subnet" {
 data "yandex_compute_image" "ubuntu" {
   family = "ubuntu-2404-lts-oslogin"
 }
-
-resource "yandex_dns_zone" "zone" {
-  zone   = "${var.domain}."
-  public = true
-}

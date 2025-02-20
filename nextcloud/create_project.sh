@@ -1,5 +1,5 @@
 if [ "$#" -ne 3 ]; then
-    echo "Illegal number of parameters. Using: ./create_project <PROJECT_NAME> <USER_EMAIL> <USER_PASSWORD>"
+    echo "Illegal number of parameters. Using: ./create_project.sh <PROJECT_NAME> <USER_EMAIL> <USER_PASSWORD>"
 fi
 
 project_name=$1
@@ -40,7 +40,7 @@ done
 if [ $terraform_success = false ]; then
     echo "Terraform apply failed"
     exit 1
-else
+fi
 
 echo "Running Ansible playbook..."
 ansible-playbook -i ansible/inventory-$project_name.ini ansible/nextcloud-playbook.yml --extra-vars "email=$user_email password=$user_password"
@@ -50,5 +50,5 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-domain=$(terraform output $project_name | tr -d '"')
+domain=$(/home/$USER/terraform output $project_name-domain | tr -d '"')
 echo "Done: $domain"

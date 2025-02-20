@@ -11,3 +11,7 @@ variable "domain" {
   type        = string
   default     = "vvot33.itiscl.ru"
 }
+variable "dns_zone_id" {
+  description = "DNS Zone ID"
+  type        = string
+}

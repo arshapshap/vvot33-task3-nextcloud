@@ -1,4 +1,10 @@
+if [ "$#" -ne 1 ]; then
+    echo "Illegal number of parameters. Using: ./setup_server.sh <EMAIL>"
+fi
+
 echo "Setupping server"
+
+email=$1
 
 terraform_success=false
 terraform_attempt_num=1
@@ -24,10 +30,13 @@ ip=$(terraform output server-vm-ip | tr -d '"')
 home=/home/ubuntu
 scp -r ../nextcloud ubuntu@$ip:$home
 scp -r ~/.yc-keys ubuntu@$ip:$home
-scp terraform.vars ubuntu@$ip:$home/nextcloud
+scp terraform.tfvars ubuntu@$ip:$home/nextcloud
+dns_zone_id=$(terraform output dns-zone-id | tr -d '"')
+ssh ubuntu@$ip "echo >> $home/nextcloud/terraform.tfvars"
+ssh ubuntu@$ip "echo 'dns_zone_id=\"$dns_zone_id\"' >> $home/nextcloud/terraform.tfvars"
 
 echo "Running Ansible playbook..."
-ansible-playbook -i ansible/inventory.ini ansible/server-playbook.yml
+ansible-playbook -i ansible/inventory.ini ansible/server-playbook.yml --extra-vars "email=$email"
 
 if [ $? -ne 0 ]; then
     echo "Ansible playbook failed"

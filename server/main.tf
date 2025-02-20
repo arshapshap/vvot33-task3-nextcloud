@@ -65,6 +65,16 @@ resource "null_resource" "add-known-host" {
     depends_on = [yandex_compute_instance.server-vm]
 }
 
+resource "null_resource" "add-domain-to-inventory" {
+    provisioner "local-exec" {
+        command = "sed -i '' \"s/{DOMAIN}/${var.domain}/g\" ansible/inventory.ini"
+    }
+    provisioner "local-exec" {
+        when    = destroy
+        command = "sed -i '' -e \"s/domain=.*$/domain={DOMAIN}/g\" ansible/inventory.ini"
+    }
+}
+
 resource "null_resource" "add-ip-to-inventory" {
     provisioner "local-exec" {
         command = "sed -i '' \"s/{IP}/${yandex_compute_instance.server-vm.network_interface[0].nat_ip_address}/g\" ansible/inventory.ini"
@@ -73,9 +83,30 @@ resource "null_resource" "add-ip-to-inventory" {
         when    = destroy
         command = "sed -i '' -e \"s/[0-9]\\{1,3\\}\\(.[0-9]\\{1,3\\}\\)\\{3\\}/{IP}/g\" ansible/inventory.ini"
     }
-    depends_on = [yandex_compute_instance.server-vm]
+    depends_on = [yandex_compute_instance.server-vm, null_resource.add-domain-to-inventory]
+}
+
+resource "yandex_dns_zone" "zone" {
+  zone   = "${var.domain}."
+  public = true
+}
+
+resource "yandex_dns_recordset" "record" {
+  zone_id = yandex_dns_zone.zone.id
+  name    = "@"
+  type    = "A"
+  ttl     = 3000
+  data    = [yandex_compute_instance.server-vm.network_interface.0.nat_ip_address]
 }
 
 output "server-vm-ip" {
     value = yandex_compute_instance.server-vm.network_interface[0].nat_ip_address
+}
+
+output "dns-zone-id" {
+    value = yandex_dns_zone.zone.id
+}
+
+output "server-domain" {
+    value = var.domain
 }

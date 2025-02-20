@@ -1,6 +1,8 @@
 - name: Server
   hosts: server
   vars:
+    email: ""
+    domain: "{{ hostvars[inventory_hostname].domain }}"
     terraform_version: "1.10.5"
     terraform_url: "https://hashicorp-releases.yandexcloud.net/terraform/{{ terraform_version }}/terraform_{{ terraform_version }}_linux_amd64.zip"
     user_home: "/home/ubuntu"
@@ -16,6 +18,36 @@
       ansible.builtin.apt:
         update_cache: true
         upgrade: yes
+
+    - name: Install packages
+      become: true
+      ansible.builtin.apt:
+        pkg:
+          - apache2
+          - certbot
+          - python3-certbot-apache
+        state: present
+    
+    - name: Create temporary HTTP config
+      become: true
+      template:
+        src: server-http.conf.j2
+        dest: /etc/apache2/sites-available/server.conf
+    
+    - name: Enable Apache SSL module
+      become: true
+      command: a2enmod ssl
+
+    - name: Obtain SSL certificate
+      become: true
+      command: certbot --apache -d {{ domain }} --non-interactive --agree-tos --email {{ email }}
+
+    - name: Apply final HTTPS config
+      become: true
+      template:
+        src: server-https.conf.j2
+        dest: /etc/apache2/sites-available/server.conf
+      notify: Restart Apache
 
     - name: Install Ansible
       become: true
@@ -82,3 +114,10 @@
         mode: '0700'
         owner: ubuntu
         group: ubuntu
+
+  handlers:
+    - name: Restart Apache
+      become: true
+      ansible.builtin.service:
+        name: apache2
+        state: restarted

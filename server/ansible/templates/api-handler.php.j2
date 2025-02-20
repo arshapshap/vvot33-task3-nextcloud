@@ -19,8 +19,12 @@ try {
     $email = trim($input['email']);
     $password = trim($input['password']);
 
+    if (!preg_match('/^[a-zA-Z0-9_-]*$/', $projectName)) {
+        throw new Exception('The project name can only consist of Latin letters, numbers, hyphens, and underscores');
+    }
+
     if (!preg_match('/^[a-zA-Z][a-zA-Z0-9_-]*[a-zA-Z0-9]$/', $projectName)) {
-        throw new Exception('Invalid project name format');
+        throw new Exception('The project name must begin with a letter and end with a letter or a number');
     }
 
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
@@ -48,26 +52,42 @@ try {
     $response['debug']['full_command'] = $command;
 
     exec($command, $output, $returnCode);
-    
+
     $response['debug'] += [
         'output' => $output,
         'return_code' => $returnCode,
-        'env_path' => getenv('PATH')
     ];
 
     if ($returnCode !== 0) {
-        throw new Exception("Script failed with code $returnCode: " . implode("\n", $output));
+        $errorLines = array_filter($output, function($line) {
+            return preg_match('/error|already exists|failed|invalid/i', $line);
+        });
+        
+        $cleanError = $errorLines ? end($errorLines) : 'Unknown error';
+        $cleanError = preg_replace('/^(.*?:(\\s+|\\d+:))+/', '', $cleanError);
+        
+        throw new Exception(trim($cleanError));
     }
 
     $response = [
         'success' => true,
-        'message' => "Project created successfully: <a href=https://$projectName.{{ domain }}>$projectName.{{ domain }}</a>",
+        'message' => 'Project created successfully',
+        'domain' => '{{ domain }}',
+        'project' => $projectName,
         'output' => $output
     ];
 
 } catch (Exception $e) {
     http_response_code(400);
     $response['message'] = $e->getMessage();
+
+    $response['message'] = preg_replace([
+        '/^script.*:/i',
+        '/sudo: /i',
+        '/\\d+:\\s*/'
+    ], '', $response['message']);
+    
+    $response['message'] = trim($response['message'], " \t\n\r\0\x0B:");
 }
 
 echo json_encode($response);

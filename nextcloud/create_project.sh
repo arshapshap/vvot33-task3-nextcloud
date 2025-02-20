@@ -8,7 +8,7 @@ user_password=$3
 
 cd /home/$USER/nextcloud
 if [ -f project-$project_name.tf] || [ -f ansible/inventory-$project_name.ini ]; then
-  echo "Project already exists"
+  echo "A project with that name already exists"
   exit 1
 fi
 

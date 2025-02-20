@@ -68,6 +68,22 @@
         owner: www-data
         group: www-data
     
+    - name: Set X permission for user directory
+      become: true
+      file:
+        path: "{{ user_home }}"
+        mode: '0755'
+        owner: ubuntu
+        group: www-data
+
+    - name: Set X permission for create_project script
+      become: true
+      file:
+        path: "{{ user_home }}/nextcloud/create_project.sh"
+        mode: '0755'
+        owner: ubuntu
+        group: www-data
+
     - name: Create sudoers.d directory if not exists
       become: true
       file:

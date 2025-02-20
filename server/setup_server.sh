@@ -1,5 +1,5 @@
 if [ "$#" -ne 1 ]; then
-    echo "Illegal number of parameters. Using: ./setup_server.sh <EMAIL>"
+    echo "Illegal number of parameters. Using: ./setup_server.sh"
 fi
 
 echo "Setupping server"
@@ -36,7 +36,7 @@ ssh ubuntu@$ip "echo >> $home/nextcloud/terraform.tfvars"
 ssh ubuntu@$ip "echo 'dns_zone_id=\"$dns_zone_id\"' >> $home/nextcloud/terraform.tfvars"
 
 echo "Running Ansible playbook..."
-ansible-playbook -i ansible/inventory.ini ansible/server-playbook.yml --extra-vars "email=$email"
+ansible-playbook -i ansible/inventory.ini -e ansible/secret-vars.yml ansible/server-playbook.yml
 
 if [ $? -ne 0 ]; then
     echo "Ansible playbook failed"

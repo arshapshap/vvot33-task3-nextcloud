@@ -39,10 +39,6 @@
             transition: transform 0.2s ease;
         }
 
-        #createProjectForm:hover {
-            transform: translateY(-2px);
-        }
-
         .form-group {
             margin-bottom: 1.5rem;
         }
@@ -212,19 +208,9 @@
             >
         </div>
 
-        <div class="form-group">
-            <label for="password">Password</label>
-            <input 
-                type="password" 
-                name="password" 
-                placeholder="••••••••" 
-                required
-            >
-        </div>
-
         <button type="submit">Create Project</button>
         <p class="form-info">
-            The specified e-mail and password will be used to access your Nextcloud instance.
+            The specified e-mail will be used to access your Nextcloud instance.
         </p>
     </form>
 
@@ -251,8 +237,7 @@
             const formData = new FormData(e.target);
             const requestData = {
                 project_name: formData.get('project_name'),
-                email: formData.get('email'),
-                password: formData.get('password')
+                email: formData.get('email')
             };
 
             try {
@@ -279,7 +264,7 @@
                             ${result.project}.${result.domain}
                         </a>
                         <div class="additional-info">
-                            Check your email <b>${requestData.email}</b> for additional information.
+                            Check your email <b>${requestData.email}</b> for access credentials.
                         </div>`;
                 } else {
                     resultDiv.innerHTML = `❌ ${result.message}`;

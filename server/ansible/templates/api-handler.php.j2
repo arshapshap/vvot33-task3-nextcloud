@@ -4,6 +4,63 @@ header("Access-Control-Allow-Origin: {{ domain }}");
 header("Access-Control-Allow-Methods: POST");
 header("Access-Control-Allow-Headers: Content-Type");
 
+require 'vendor/autoload.php';
+
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
+
+function sendProjectEmail($email, $projectName, $password) {
+    $mail = new PHPMailer(true);
+    $projectUrl = "https://{$projectName}.{{ domain }}";
+
+    try {
+        $mail->isSMTP();
+        $mail->Host = '{{ smtp_host }}';
+        $mail->SMTPAuth = true;
+        $mail->Username = '{{ email }}';
+        $mail->Password = '{{ smtp_password }}';
+        $mail->SMTPSecure = '{{ smtp_secure }}';
+        $mail->Port = {{ smtp_port }};
+
+        $mail->setFrom('{{ email }}', 'NextCloud AutoCreate');
+        $mail->addAddress($email);
+
+        $mail->CharSet = 'UTF-8';
+        $mail->isHTML(true);
+        $mail->Subject = "Your New NextCloud Project: {$projectName}";
+
+        $htmlContent = "
+            <h1>Project Credentials</h1>
+            <p>Your NextCloud instance is ready!</p>
+            <table>
+                <tr><td>URL:</td><td><a href='{$projectUrl}'>{$projectUrl}</a></td></tr>
+                <tr><td>Login:</td><td>{$email}</td></tr>
+                <tr><td>Password:</td><td><code>{$password}</code></td></tr>
+            </table>
+            <p style='color: red'>This project will be automatically deleted after 30 minutes</p>
+        ";
+
+        $mail->Body = $htmlContent;
+        $mail->AltBody = strip_tags($htmlContent);
+
+        return $mail->send();
+    } catch (Exception $e) {
+        throw new Exception("Mail Error: {$mail->ErrorInfo}");
+   }
+}
+
+function generatePassword($length = 12) {
+    $chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_=+';
+    $password = '';
+
+    $charsLength = strlen($chars);
+    for ($i = 0; $i < $length; $i++) {
+        $password .= $chars[random_int(0, $charsLength - 1)];
+    }
+
+    return $password;
+}
+
 $response = ['success' => false, 'message' => '', 'debug' => []];
 
 try {
@@ -11,13 +68,13 @@ try {
 
     $response['debug']['received_data'] = $input;
 
-    if (empty($input['project_name']) || empty($input['email']) || empty($input['password'])) {
+    if (empty($input['project_name']) || empty($input['email'])) {
         throw new Exception('All fields are required');
     }
 
     $projectName = trim($input['project_name']);
     $email = trim($input['email']);
-    $password = trim($input['password']);
+    $password = generatePassword(12);
 
     if (!preg_match('/^[a-zA-Z0-9_-]*$/', $projectName)) {
         throw new Exception('The project name can only consist of Latin letters, numbers, hyphens, and underscores');
@@ -31,12 +88,8 @@ try {
         throw new Exception('Invalid email format');
     }
 
-    if (strlen($password) < 8) {
-        throw new Exception('Password must be at least 8 characters');
-    }
-
     $scriptPath = '/home/ubuntu/nextcloud/create_project.sh';
-    
+
     if (!file_exists($scriptPath)) {
         throw new Exception("Script not found: $scriptPath");
     }
@@ -62,11 +115,15 @@ try {
         $errorLines = array_filter($output, function($line) {
             return preg_match('/error|already exists|failed|invalid/i', $line);
         });
-        
+
         $cleanError = $errorLines ? end($errorLines) : 'Unknown error';
         $cleanError = preg_replace('/^(.*?:(\\s+|\\d+:))+/', '', $cleanError);
-        
+
         throw new Exception(trim($cleanError));
+    }
+
+    if (!sendProjectEmail($email, $projectName, $password)) {
+        throw new Exception('Failed to send credentials to email');
     }
 
     $response = [
@@ -86,7 +143,7 @@ try {
         '/sudo: /i',
         '/\\d+:\\s*/'
     ], '', $response['message']);
-    
+
     $response['message'] = trim($response['message'], " \t\n\r\0\x0B:");
 }
 

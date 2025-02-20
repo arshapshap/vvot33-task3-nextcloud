@@ -1,7 +1,8 @@
 - name: Server
   hosts: server
+  vars_files:
+    - smtp-vars.yml
   vars:
-    email: ""
     domain: "{{ hostvars[inventory_hostname].domain }}"
     terraform_version: "1.10.5"
     terraform_url: "https://hashicorp-releases.yandexcloud.net/terraform/{{ terraform_version }}/terraform_{{ terraform_version }}_linux_amd64.zip"
@@ -23,12 +24,82 @@
       become: true
       ansible.builtin.apt:
         pkg:
+          - acl
           - apache2
           - certbot
           - python3-certbot-apache
           - php
+          - php-cli
+          - php-mbstring
+          - php-xml
         state: present
     
+    - name: Download Composer installer
+      become: true
+      get_url:
+        url: https://getcomposer.org/installer
+        dest: /tmp/composer-setup.php
+        mode: '0755'
+
+    - name: Install Composer globally
+      become: true
+      command: >
+        php /tmp/composer-setup.php
+        --install-dir=/usr/local/bin
+        --filename=composer
+    
+    - name: Prepare Composer environment
+      become: true
+      block:
+        - name: Create Composer home directory
+          file:
+            path: /var/www/.composer
+            state: directory
+            owner: www-data
+            group: www-data
+            mode: '0755'
+
+        - name: Set web directory permissions
+          file:
+            path: /var/www/html
+            owner: www-data
+            group: www-data
+            recurse: yes
+            mode: '0755'
+
+    - name: Install PHPMailer via Composer
+      become: true
+      command: >
+        /usr/local/bin/composer require phpmailer/phpmailer
+        --working-dir=/var/www/html
+        --no-interaction
+        --no-progress
+        --no-scripts
+      environment:
+        COMPOSER_HOME: /var/www/.composer
+        COMPOSER_CACHE_DIR: /var/www/.composer/cache
+      args:
+        chdir: /var/www/html
+        creates: /var/www/html/vendor/phpmailer/phpmailer
+
+    - name: Deploy HTML index
+      become: true
+      ansible.builtin.template:
+        src: index.html.j2
+        dest: /var/www/html/index.html
+        mode: '0644'
+        owner: www-data
+        group: www-data
+
+    - name: Deploy API handler
+      become: true
+      ansible.builtin.template:
+        src: api-handler.php.j2
+        dest: /var/www/html/api.php
+        mode: '0644'
+        owner: www-data
+        group: www-data
+
     - name: Create temporary HTTP config
       become: true
       template:
@@ -50,24 +121,6 @@
         dest: /etc/apache2/sites-available/server.conf
       notify: Restart Apache
 
-    - name: Deploy HTML index
-      become: true
-      ansible.builtin.template:
-        src: index.html.j2
-        dest: /var/www/html/index.html
-        mode: '0644'
-        owner: www-data
-        group: www-data
-    
-    - name: Deploy API handler
-      become: true
-      ansible.builtin.template:
-        src: api-handler.php.j2
-        dest: /var/www/html/api.php
-        mode: '0644'
-        owner: www-data
-        group: www-data
-    
     - name: Set X permission for user directory
       become: true
       file:

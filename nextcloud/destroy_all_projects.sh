@@ -1,4 +1,4 @@
-echo "Destroying all"
+echo "Destroying all projects"
 
 cd /home/$USER/nextcloud
 /home/$USER/terraform destroy -auto-approve

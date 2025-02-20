@@ -7,7 +7,7 @@
     db_user: "dbuser"
     db_password: "dbpassword"
     db_name: "dbnextcloud"
-  
+
   tasks:
     - name: Timezone settings
       become: true

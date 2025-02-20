@@ -24,6 +24,7 @@ ip=$(terraform output server-vm-ip | tr -d '"')
 home=/home/ubuntu
 scp -r ../nextcloud ubuntu@$ip:$home
 scp -r ~/.yc-keys ubuntu@$ip:$home
+scp terraform.vars ubuntu@$ip:$home/nextcloud
 
 echo "Running Ansible playbook..."
 ansible-playbook -i ansible/inventory.ini ansible/server-playbook.yml

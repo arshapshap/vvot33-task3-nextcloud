@@ -37,10 +37,18 @@ while [ $terraform_success = false ] && [ $terraform_attempt_num -le $terraform_
   fi
 done
 
-if [ $terraform_success = true ]; then
-    echo "Running Ansible playbook..."
-    ansible-playbook -i ansible/inventory-$project_name.ini ansible/nextcloud-playbook.yml --extra-vars "email=$user_email password=$user_password"
-else
+if [ $terraform_success = false ]; then
     echo "Terraform apply failed"
     exit 1
+else
+
+echo "Running Ansible playbook..."
+ansible-playbook -i ansible/inventory-$project_name.ini ansible/nextcloud-playbook.yml --extra-vars "email=$user_email password=$user_password"
+
+if [ $? -ne 0 ]; then
+    echo "Ansible playbook failed"
+    exit 1
 fi
+
+domain=$(terraform output $project_name | tr -d '"')
+echo "Done: $domain"

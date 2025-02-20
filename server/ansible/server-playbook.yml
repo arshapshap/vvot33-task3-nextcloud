@@ -7,7 +7,8 @@
     terraform_version: "1.10.5"
     terraform_url: "https://hashicorp-releases.yandexcloud.net/terraform/{{ terraform_version }}/terraform_{{ terraform_version }}_linux_amd64.zip"
     user_home: "/home/ubuntu"
-  
+    project_expiration_time_mins: "30"
+
   tasks:
     - name: Timezone settings
       become: true
@@ -26,6 +27,7 @@
         pkg:
           - acl
           - apache2
+          - at
           - certbot
           - python3-certbot-apache
           - php
@@ -33,7 +35,7 @@
           - php-mbstring
           - php-xml
         state: present
-    
+
     - name: Download Composer installer
       become: true
       get_url:
@@ -47,7 +49,7 @@
         php /tmp/composer-setup.php
         --install-dir=/usr/local/bin
         --filename=composer
-    
+
     - name: Prepare Composer environment
       become: true
       block:
@@ -100,12 +102,30 @@
         owner: www-data
         group: www-data
 
+    - name: Allow www-data to use at command
+      become: true
+      copy:
+        dest: "/etc/sudoers.d/www-data-at"
+        content: |
+          www-data ALL=(ALL) NOPASSWD: /usr/bin/at
+        owner: root
+        group: root
+        mode: '0440'
+        validate: '/usr/sbin/visudo -cf %s'
+
+    - name: Ensure atd service is running
+      become: true
+      ansible.builtin.service:
+        name: atd
+        state: started
+        enabled: yes
+
     - name: Create temporary HTTP config
       become: true
       template:
         src: server-http.conf.j2
         dest: /etc/apache2/sites-available/server.conf
-    
+
     - name: Enable Apache SSL module
       become: true
       command: a2enmod ssl

@@ -37,7 +37,7 @@ function sendProjectEmail($email, $projectName, $password) {
                 <tr><td>Login:</td><td>{$email}</td></tr>
                 <tr><td>Password:</td><td><code>{$password}</code></td></tr>
             </table>
-            <p style='color: red'>This project will be automatically deleted after 30 minutes</p>
+            <p style='color: red'>This project will be automatically deleted after {{ project_expiration_time_mins }} minutes</p>
         ";
 
         $mail->Body = $htmlContent;
@@ -47,6 +47,26 @@ function sendProjectEmail($email, $projectName, $password) {
     } catch (Exception $e) {
         throw new Exception("Mail Error: {$mail->ErrorInfo}");
    }
+}
+
+function scheduleProjectDestruction($projectName) {
+    $scriptPath = '/home/ubuntu/nextcloud/destroy_project.sh';
+
+    if (!file_exists($scriptPath)) {
+        throw new Exception("Script not found: $scriptPath");
+    }
+
+    $destroy_command = sprintf(
+        'sudo -u ubuntu %s %s',
+        escapeshellcmd($scriptPath),
+        escapeshellarg($projectName)
+    );
+
+    $command = sprintf(
+        'sudo /usr/bin/at now + {{ project_expiration_time_mins }} min <<< "%s"',
+        escapeshellcmd($destroy_command)
+    );
+    exec($command);
 }
 
 function generatePassword($length = 12) {
@@ -125,6 +145,8 @@ try {
     if (!sendProjectEmail($email, $projectName, $password)) {
         throw new Exception('Failed to send credentials to email');
     }
+
+    scheduleProjectDestruction($projectName);
 
     $response = [
         'success' => true,

@@ -6,20 +6,21 @@ project_name=$1
 user_email=$2
 user_password=$3
 
+cd /home/$USER/nextcloud
+if [ -f project-$project_name.tf] || [ -f ansible/inventory-$project_name.ini ]; then
+  echo "Project already exists"
+  exit 1
+fi
+
+
 echo "Creating project '$project_name' with user '$user_email' and password '$user_password'"
 
-cd /home/$USER/nextcloud
-if [ ! -f project-$project_name.tf ]; then
-  cp templates/project.tf.template project-$project_name.tf
-  sed -i "s/{PROJECT_NAME}/$project_name/g" project-$project_name.tf
-  sed -i "s/{USER_EMAIL}/$user_email/g" project-$project_name.tf
-  sed -i "s/{USER_PASSWORD}/$user_password/g" project-$project_name.tf
-fi
-
-if [ ! -f ansible/inventory-$project_name.ini ]; then
-  cp templates/inventory.ini.template ansible/inventory-$project_name.ini
-  sed -i "s/{PROJECT_NAME}/$project_name/g" ansible/inventory-$project_name.ini
-fi
+cp templates/project.tf.template project-$project_name.tf
+sed -i "s/{PROJECT_NAME}/$project_name/g" project-$project_name.tf
+sed -i "s/{USER_EMAIL}/$user_email/g" project-$project_name.tf
+sed -i "s/{USER_PASSWORD}/$user_password/g" project-$project_name.tf
+cp templates/inventory.ini.template ansible/inventory-$project_name.ini
+sed -i "s/{PROJECT_NAME}/$project_name/g" ansible/inventory-$project_name.ini
 
 /home/$USER/terraform init -upgrade
 

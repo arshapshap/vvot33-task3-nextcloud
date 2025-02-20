@@ -26,6 +26,7 @@
           - apache2
           - certbot
           - python3-certbot-apache
+          - php
         state: present
     
     - name: Create temporary HTTP config
@@ -48,6 +49,44 @@
         src: server-https.conf.j2
         dest: /etc/apache2/sites-available/server.conf
       notify: Restart Apache
+
+    - name: Deploy HTML index
+      become: true
+      ansible.builtin.template:
+        src: index.html.j2
+        dest: /var/www/html/index.html
+        mode: '0644'
+        owner: www-data
+        group: www-data
+    
+    - name: Deploy API handler
+      become: true
+      ansible.builtin.template:
+        src: api-handler.php.j2
+        dest: /var/www/html/api.php
+        mode: '0644'
+        owner: www-data
+        group: www-data
+    
+    - name: Create sudoers.d directory if not exists
+      become: true
+      file:
+        path: /etc/sudoers.d/
+        state: directory
+        mode: '0750'
+        owner: root
+        group: root
+
+    - name: Deploy sudoers rule
+      become: true
+      copy:
+        dest: "/etc/sudoers.d/web-scripts"
+        content: |
+          www-data ALL=(ubuntu) NOPASSWD: /home/ubuntu/nextcloud/create_project.sh
+        owner: root
+        group: root
+        mode: '0440'
+        validate: /usr/sbin/visudo -cf %s
 
     - name: Install Ansible
       become: true

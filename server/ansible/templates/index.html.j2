@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Creating Nextcloud project</title>
+</head>
+<body>
+    <form id="createProjectForm">
+        <label>Project name:</label>
+        <input type="text" name="project_name" required><br>
+
+        <label>E-mail:</label>
+        <input type="email" name="email" required><br>
+
+        <label>Password:</label>
+        <input type="password" name="password" required><br>
+
+        <button type="submit">Create</button><br>
+        <label>The specified E-mail and password will be used to access Nextcloud.</label><br>
+    </form>
+
+    <div id="result"></div>
+
+    <script>
+        document.getElementById('createProjectForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const resultDiv = document.getElementById('result');
+            
+            // Показываем статус создания сразу
+            resultDiv.innerHTML = 'Project is creating...';
+            resultDiv.style.color = 'blue';
+    
+            const formData = new FormData(e.target);
+            const requestData = {
+                project_name: formData.get('project_name'),
+                email: formData.get('email'),
+                password: formData.get('password')
+            };
+    
+            try {
+                const response = await fetch('/api.php', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(requestData)
+                });
+                
+                const result = await response.json();
+                resultDiv.innerHTML = result.message;
+                resultDiv.style.color = response.ok ? 'green' : 'red';
+                
+            } catch (error) {
+                resultDiv.innerHTML = 'Error: ' + error.message;
+                resultDiv.style.color = 'red';
+            }
+        });
+    </script>
+</body>
+</html>

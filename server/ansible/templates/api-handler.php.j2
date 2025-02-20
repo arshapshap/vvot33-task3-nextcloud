@@ -1,0 +1,74 @@
+<?php
+header('Content-Type: application/json');
+header("Access-Control-Allow-Origin: {{ domain }}");
+header("Access-Control-Allow-Methods: POST");
+header("Access-Control-Allow-Headers: Content-Type");
+
+$response = ['success' => false, 'message' => '', 'debug' => []];
+
+try {
+    $input = json_decode(file_get_contents('php://input'), true);
+
+    $response['debug']['received_data'] = $input;
+
+    if (empty($input['project_name']) || empty($input['email']) || empty($input['password'])) {
+        throw new Exception('All fields are required');
+    }
+
+    $projectName = trim($input['project_name']);
+    $email = trim($input['email']);
+    $password = trim($input['password']);
+
+    if (!preg_match('/^[a-zA-Z][a-zA-Z0-9_-]*[a-zA-Z0-9]$/', $projectName)) {
+        throw new Exception('Invalid project name format');
+    }
+
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        throw new Exception('Invalid email format');
+    }
+
+    if (strlen($password) < 8) {
+        throw new Exception('Password must be at least 8 characters');
+    }
+
+    $scriptPath = '/home/ubuntu/nextcloud/create_project.sh';
+    
+    if (!file_exists($scriptPath)) {
+        throw new Exception("Script not found: $scriptPath");
+    }
+
+    $command = sprintf(
+        'sudo -u ubuntu %s %s %s %s 2>&1',
+        escapeshellcmd($scriptPath),
+        escapeshellarg($projectName),
+        escapeshellarg($email),
+        escapeshellarg($password)
+    );
+
+    $response['debug']['full_command'] = $command;
+
+    exec($command, $output, $returnCode);
+    
+    $response['debug'] += [
+        'output' => $output,
+        'return_code' => $returnCode,
+        'env_path' => getenv('PATH')
+    ];
+
+    if ($returnCode !== 0) {
+        throw new Exception("Script failed with code $returnCode: " . implode("\n", $output));
+    }
+
+    $response = [
+        'success' => true,
+        'message' => "Project created successfully: <a href=https://$projectName.{{ domain }}>$projectName.{{ domain }}</a>",
+        'output' => $output
+    ];
+
+} catch (Exception $e) {
+    http_response_code(400);
+    $response['message'] = $e->getMessage();
+}
+
+echo json_encode($response);
+?>

@@ -24,4 +24,4 @@ http://{IP}:8080/nextcloud
 http://{IP}/nextcloud
 ```
 
-### Version with web-server: [`dev` branch](https://github.com/arshapshap/vvot33-task3-nextcloud/tree/dev)
+### Version with web-server: [`web-server`](https://github.com/arshapshap/vvot33-task3-nextcloud/tree/web-server)

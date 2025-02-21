@@ -18,6 +18,11 @@
 </details>
 
 ## Setup
+- To start, you need to have:
+    - Terraform
+    - Ansible
+    - SSH-key: `~/.ssh/id_rsa.pub` 
+
 - Go to folder `server`:
 ```
 cd server
@@ -27,15 +32,17 @@ cd server
 ```
 cloud_id  = "<value>"
 folder_id = "<value>"
+domain    = "<value>"
 ```
 
-- Fill in variables in file `ansible/smtp-vars.yml`:
+- Create file `ansible/local-vars.yml`:
 ```
-email: <YOUR_EMAIL>
-smtp_host: <YOUR_SMTP_HOST>
-smtp_password: <YOUR_SMTP_PASSWORD>
-smtp_port: <YOUR_SMTP_PORT>
-smtp_secure: <YOUR_SMTP_SECURE>
+lets_encrypt_email: <value>
+smtp_email: <value>
+smtp_host: <value>
+smtp_password: <value>
+smtp_port: <value>
+smtp_secure: <value>
 ```
 
 - Run server:
@@ -43,7 +50,7 @@ smtp_secure: <YOUR_SMTP_SECURE>
 ./setup_server.sh
 ```
 
-The website will be accessible via the link specified in the `domain` variable of the Terraform configuration (https://vvot33.itiscl.ru by default).
+The website will be accessible via the link specified in the `domain` variable of the Terraform configuration.
 
 - Destroy server after using:
 ```

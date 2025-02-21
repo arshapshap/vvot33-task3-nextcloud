@@ -17,12 +17,12 @@ function sendProjectEmail($email, $projectName, $password) {
         $mail->isSMTP();
         $mail->Host = '{{ smtp_host }}';
         $mail->SMTPAuth = true;
-        $mail->Username = '{{ email }}';
+        $mail->Username = '{{ smtp_email }}';
         $mail->Password = '{{ smtp_password }}';
         $mail->SMTPSecure = '{{ smtp_secure }}';
         $mail->Port = {{ smtp_port }};
 
-        $mail->setFrom('{{ email }}', 'NextCloud AutoCreate');
+        $mail->setFrom('{{ smtp_email }}', 'NextCloud AutoCreate');
         $mail->addAddress($email);
 
         $mail->CharSet = 'UTF-8';

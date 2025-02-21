@@ -8,8 +8,11 @@ home=/home/ubuntu
 ssh ubuntu@$ip "$home/nextcloud/destroy_all_projects.sh"
 
 if [ $? -ne 0 ]; then
-    echo "Destroying projects failed"
-    exit 1
+    echo "Destroying projects failed."
+    read -p "Continue? (y/n) " -n 2 -r
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        exit 1
+    fi
 fi
 
 echo "Destroying server"

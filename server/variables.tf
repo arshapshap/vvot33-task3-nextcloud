@@ -9,5 +9,4 @@ variable "folder_id" {
 variable "domain" {
   description = "Domain"
   type        = string
-  default     = "vvot33.itiscl.ru"
 }

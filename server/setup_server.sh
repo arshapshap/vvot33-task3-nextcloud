@@ -1,10 +1,6 @@
-if [ "$#" -ne 1 ]; then
-    echo "Illegal number of parameters. Using: ./setup_server.sh"
-fi
-
 echo "Setupping server"
 
-email=$1
+terraform init -upgrade
 
 terraform_success=false
 terraform_attempt_num=1

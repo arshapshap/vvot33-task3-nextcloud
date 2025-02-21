@@ -95,7 +95,7 @@ resource "yandex_dns_recordset" "record" {
   zone_id = yandex_dns_zone.zone.id
   name    = "@"
   type    = "A"
-  ttl     = 3000
+  ttl     = 300
   data    = [yandex_compute_instance.server-vm.network_interface.0.nat_ip_address]
 }
 

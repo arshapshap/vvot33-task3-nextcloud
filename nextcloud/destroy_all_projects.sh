@@ -1,6 +1,11 @@
 echo "Destroying all projects"
 
 cd /home/$USER/nextcloud
+if [ ! -d ".terraform" ]; then
+    echo "Terraform not initialized"
+    exit 0
+fi
+
 /home/$USER/terraform destroy -auto-approve
 
 if [ $? -ne 0 ]; then

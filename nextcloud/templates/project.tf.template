@@ -32,7 +32,7 @@ resource "yandex_dns_recordset" "record-{PROJECT_NAME}" {
   zone_id = var.dns_zone_id
   name    = "{PROJECT_NAME}"
   type    = "A"
-  ttl     = 3000
+  ttl     = 300
   data    = [yandex_compute_instance.nextcloud-vm-{PROJECT_NAME}.network_interface.0.nat_ip_address]
 }
 
